@@ -84,3 +84,61 @@ func (h *Handler) GetUserById(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.Write(userParsed)
 }
+
+func (h *Handler) DeleteUser(w http.ResponseWriter, r *http.Request) {
+	id, err := strconv.Atoi(r.PathValue("id"))
+	if err != nil {
+		http.Error(w, "invalid id", http.StatusBadRequest)
+		return
+	}
+
+	responseUserEntity := h.repository.GetUserById(id)
+	if responseUserEntity.ID == 0 {
+		http.Error(w, "user not found", http.StatusNotFound)
+		return
+	}
+
+	err = h.repository.DeleteUserById(id)
+	if err != nil {
+		http.Error(w, "it wasn't possible to delete the user", http.StatusUnprocessableEntity)
+		return
+	}
+
+	w.WriteHeader(204)
+}
+
+func (h *Handler) EditUser(w http.ResponseWriter, r *http.Request) {
+
+	id, err := strconv.Atoi(r.PathValue("id"))
+	if err != nil {
+		http.Error(w, "invalid id", http.StatusBadRequest)
+		return
+	}
+
+	user := h.repository.GetUserById(id)
+	if user.ID == 0 {
+		http.Error(w, "user not found", http.StatusNotFound)
+		return
+	}
+
+	body := RequestBody{}
+	_ = json.NewDecoder(r.Body).Decode(&body)
+
+	newData, err := model.ToUserEntity(body.Name, body.Birthday)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	user.Age = newData.Age
+	user.Name = newData.Name
+	user.Birthday = newData.Birthday
+
+	err = h.repository.UpdateUser(user)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusUnprocessableEntity)
+		return
+	}
+
+	w.WriteHeader(204)
+}

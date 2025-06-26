@@ -73,3 +73,31 @@ func (ur *UserRepository) GetAllUsers() *[]model.User {
 	}
 	return &users
 }
+
+func (ur *UserRepository) DeleteUserById(id int) error {
+	stmt, err := ur.database.Prepare("delete from user where id = ?")
+	if err != nil {
+		fmt.Print(err)
+	}
+
+	_, err = stmt.Exec(id)
+	if err != nil {
+		fmt.Print(err)
+	}
+
+	return nil
+}
+
+func (ur *UserRepository) UpdateUser(user *model.User) error {
+	stmt, err := ur.database.Prepare("update user set name = ?, age = ?, birthday = ? where id = ?")
+	if err != nil {
+		return err
+	}
+
+	_, err = stmt.Exec(user.Name, user.Age, user.Birthday, user.ID)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
